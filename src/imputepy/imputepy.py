@@ -1,12 +1,7 @@
 import numpy as np
 import pandas as pd
 from sklearn.impute import SimpleImputer
-# from lightgbm import LGBMRegressor
-
-
-def read_data(path):
-    df = pd.read_csv(path)
-    return df
+from lightgbm import LGBMRegressor, LGBMClassifier
 
 
 def cols_to_impute(df):
@@ -17,50 +12,66 @@ def cols_to_impute(df):
     return cols
 
 
-def main(path, method):
-    df = read_data(path)
-    numeric_cols = df.select_dtypes(include='number').columns
-    categorical_cols = df.select_dtypes(exclude='number').columns
+def complete_columns(df):
+    cols = []
+    for col in df.columns:
+        if df[col].isnull().sum() == 0:
+            cols.append(col)
+    return cols
 
+
+def missing_indices(df):
+    indices = {}
+    for col in cols_to_impute(df):
+        indices[col] = df[df[col].isnull()].index.tolist()
+    return indices
+
+
+def find_cat(df, unique_count_lim=15):
+    possible_cat = []
+    for col in df.select_dtypes(include='number').columns:
+        unique_count = np.count_nonzero(df1[col].unique())
+        if unique_count < unique_count_lim:
+            possible_cat.append(col)
+    return possible_cat
+
+
+def main(path, exclude=None):
+    df = pd.read_csv(path)
+    if exclude != None:
+        df.drop(exclude, axis=1, inplace=True)
+
+    cat_cols = df.select_dtypes(exclude='number').columns.to_list()
+    cat_cols += find_cat(df)
+    df[cat_cols] = df[cat_cols].astype('category')
     missing_cols = cols_to_impute(df)
 
-    numeric_missing_cols = list(set(missing_cols) & set(numeric_cols))
-    categorical_missing_cols = list(
-        set(missing_cols) & set(categorical_cols))
+    pred = {}
+    for i, target_column in enumerate(missing_cols):
+        print(f'target column: {target_column}')
 
-    df_numeric = df.select_dtypes(include='number')
-    df_categoric = df.select_dtypes(exclude='number')
+        # select imputer
+        if target_column in cat_cols:
+            imputer = LGBMClassifier(n_jobs=-1, verbose=-1)
+        else:
+            imputer = LGBMRegressor(n_jobs=-1, verbose=-1)
 
-    train_df_numeric = df_numeric.dropna()
-    train_df_categoric = df_categoric.dropna()
+        # split trainset testset
+        train_df = df.dropna()
+        test_df = df[df[target_column].isnull()]
+        X_train = train_df.drop(columns=[target_column])
+        y_train = train_df[target_column]
+        X_test = test_df.drop(columns=[target_column])
 
-    # Define imputer
-    # if method == 'mean':
-    #     imputer_numeric = SimpleImputer(strategy='mean')
-    #     imputer_categoric = SimpleImputer(strategy='most_frequent')
+        # fitting
+        imputer.fit(X_train, y_train)
+        print(f'{i+1}/{len(missing_cols)} columns fitted')
 
-    # elif method == 'median':
-    #     imputer_numeric = SimpleImputer(strategy='median')
-    #     imputer_categoric = SimpleImputer(strategy='most_frequent')
+        # prediction
+        pred[target_column] = imputer.predict(X_test)
 
-    # elif method == 'lgbm':
-    #     imputer_numeric = LGBMRegressor()
-    #     imputer_categoric = LGBMClassifier()
+        # fill na
+        for i, index in enumerate(missing_indices(df)[target_column]):
+            df.loc[index, target_column] = pred[target_column][i]
 
-    # imputer_numeric.fit(df_numeric)
-    # imputer_categoric.fit(df_categoric)
-
-    df_numeric = pd.DataFrame(imputer_numeric.fit_transform(df_numeric),
-                              columns=df_numeric.columns)
-
-    df_categoric = pd.DataFrame(imputer_categoric.fit_transform(df_categoric),
-                                columns=df_categoric.columns)
-
-    df_imp = pd.concat([df_numeric, df_categoric], axis=1)
-    df_imp = df_imp[df.columns]
-
-    return df_imp.info()
-
-
-if __name__ == "__main__":
-    print(main('data\df.csv'))
+    return df
