@@ -35,17 +35,17 @@ def main(path, method):
     train_df_categoric = df_categoric.dropna()
 
     # Define imputer
-    if method == 'mean':
-        imputer_numeric = SimpleImputer(strategy='mean')
-        imputer_categoric = SimpleImputer(strategy='most_frequent')
+    # if method == 'mean':
+    #     imputer_numeric = SimpleImputer(strategy='mean')
+    #     imputer_categoric = SimpleImputer(strategy='most_frequent')
 
-    elif method == 'median':
-        imputer_numeric = SimpleImputer(strategy='median')
-        imputer_categoric = SimpleImputer(strategy='most_frequent')
+    # elif method == 'median':
+    #     imputer_numeric = SimpleImputer(strategy='median')
+    #     imputer_categoric = SimpleImputer(strategy='most_frequent')
 
-    elif method == 'lgbm':
-        imputer_numeric = LGBMRegressor()
-        imputer_categoric = LGBMRegressor()
+    # elif method == 'lgbm':
+    #     imputer_numeric = LGBMRegressor()
+    #     imputer_categoric = LGBMClassifier()
 
     # imputer_numeric.fit(df_numeric)
     # imputer_categoric.fit(df_categoric)
@@ -63,4 +63,4 @@ def main(path, method):
 
 
 if __name__ == "__main__":
-    print(main('data\df.csv', 'mean'))
+    print(main('data\df.csv'))
