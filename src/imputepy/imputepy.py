@@ -1,10 +1,11 @@
 import numpy as np
 import pandas as pd
 from sklearn.impute import SimpleImputer
-from lightgbm import LGBMRegressor, LGBMClassifier
+from lightgbm.sklearn import LGBMRegressor, LGBMClassifier
 
 
 def cols_to_impute(df):
+    """Return columns with missing values in a list"""
     cols = []
     for col in df.columns:
         if df[col].isnull().sum() != 0:
@@ -12,15 +13,8 @@ def cols_to_impute(df):
     return cols
 
 
-def complete_columns(df):
-    cols = []
-    for col in df.columns:
-        if df[col].isnull().sum() == 0:
-            cols.append(col)
-    return cols
-
-
 def missing_indices(df):
+    """Return the indices of the missing values in all columns of a dataframe"""
     indices = {}
     for col in cols_to_impute(df):
         indices[col] = df[df[col].isnull()].index.tolist()
@@ -28,9 +22,10 @@ def missing_indices(df):
 
 
 def find_cat(df, unique_count_lim=15):
+    """Return the column names that have less than 15 unique values"""
     possible_cat = []
     for col in df.select_dtypes(include='number').columns:
-        unique_count = np.count_nonzero(df1[col].unique())
+        unique_count = np.count_nonzero(df[col].unique())
         if unique_count < unique_count_lim:
             possible_cat.append(col)
     return possible_cat
