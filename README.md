@@ -1,16 +1,19 @@
 # imputepy
 
-Impute missing values using machine learning models
+Impute missing values using Lightgbm
 
 ## Installation
 
 ```bash
-$ pip install imputepy
+pip install imputepy
 ```
 
-## Usage
+## Features
 
-- TODO
+- **Identify Columns with Missing Values:** Automatically detect columns in a DataFrame that have missing data.
+- **Find Missing Indices:** Get the indices of missing values for targeted imputation.
+- **Categorical Column Detection:** Identify potential categorical columns based on the count of unique values.
+- **Automated Imputation:** Utilize LightGBM models to impute missing values, choosing between regression and classification based on the data type.
 
 ## Contributing
 
