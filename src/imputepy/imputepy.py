@@ -57,7 +57,7 @@ def find_cat(df, unique_count_lim=15):
     return possible_cat
 
 
-def main(path, exclude=None):
+def LGBMimputer(path, exclude=None):
     """
     Main function to process the DataFrame from a CSV file, impute missing values using LightGBM, and return the processed DataFrame.
 
@@ -113,3 +113,7 @@ def main(path, exclude=None):
             df.loc[index, target_column] = pred[target_column][i]
 
     return df
+
+
+if __name__ == '__main__':
+    main()
