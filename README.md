@@ -1,6 +1,6 @@
 # imputepy
 
-Impute missing values using Lightgbm
+Impute missing values using Lightgbm.
 
 ## Installation
 
