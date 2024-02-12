@@ -116,4 +116,4 @@ def LGBMimputer(path, exclude=None):
 
 
 if __name__ == '__main__':
-    main()
+    LGBMimputer()
