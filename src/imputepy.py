@@ -38,21 +38,21 @@ def missing_indices(df):
     return indices
 
 
-def find_cat(df, unique_count_lower_limit=15):
+def find_cat(df, unique_count_limit=15):
     """
     Identify numerical columns in a DataFrame that could be considered categorical based on a threshold of unique values.
 
     Parameters:
     - df (pd.DataFrame): The DataFrame to search within.
-    - unique_count_lower_limit (int, optional): The maximum number of unique values a column can have to be considered categorical. Defaults to 15.
+    - unique_count_limit (int, optional): The maximum number of unique values a column can have to be considered categorical. Defaults to 15.
 
     Returns:
-    - list: A list of column names that have fewer than `unique_count_lower_limit` unique values, suggesting they could be treated as categorical.
+    - list: A list of column names that have fewer than `unique_count_limit` unique values, suggesting they could be treated as categorical.
     """
     possible_cat = []
     for col in df.select_dtypes(include='number').columns:
         unique_count = np.count_nonzero(df[col].unique())
-        if unique_count < unique_count_lower_limit:
+        if unique_count < unique_count_limit:
             possible_cat.append(col)
     return possible_cat
 
@@ -74,7 +74,7 @@ def column_filter(df, cat_cols, filter_upper_limit):
             filtered.append(col)
     return filtered
 
-def LGBMimputer(df, filter=True, exclude=None, filter_upper_limit=50):
+def LGBMimputer(df, filter=True, exclude=None, filter_upper_limit=50, unique_count_limit=15):
     """
     Imputes missing values in a DataFrame using LightGBM models, with separate handling for categorical and numerical columns.
 
@@ -97,7 +97,8 @@ def LGBMimputer(df, filter=True, exclude=None, filter_upper_limit=50):
         df.drop(exclude, axis=1, inplace=True)
 
     cat_cols = df.select_dtypes(exclude='number').columns.to_list()
-    cat_cols += find_cat(df)
+    cat_cols += find_cat(df, unique_count_limit)
+    
     if filter:
         cat_cols = column_filter(df, cat_cols, filter_upper_limit=filter_upper_limit)
 
