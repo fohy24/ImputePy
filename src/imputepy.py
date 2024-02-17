@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-from sklearn.impute import SimpleImputer
 from lightgbm.sklearn import LGBMRegressor, LGBMClassifier
 
 
@@ -40,14 +39,14 @@ def missing_indices(df):
 
 def find_cat(df, unique_count_limit=15):
     """
-    Identify numerical columns in a DataFrame that could be considered categorical based on a threshold of unique values.
+    Identifies numerical columns in a DataFrame that could be considered categorical, based on a threshold of unique values.
 
     Parameters:
-    - df (pd.DataFrame): The DataFrame to search within.
-    - unique_count_limit (int, optional): The maximum number of unique values a column can have to be considered categorical. Defaults to 15.
+    - df (pd.DataFrame): DataFrame to search within.
+    - unique_count_limit (int, optional): Maximum number of unique values a column can have to be considered categorical. Defaults to 15.
 
     Returns:
-    - list: A list of column names that have fewer than `unique_count_limit` unique values, suggesting they could be treated as categorical.
+    - list: Column names with fewer than `unique_count_limit` unique values, suggesting they could be treated as categorical.
     """
     possible_cat = []
     for col in df.select_dtypes(include='number').columns:
@@ -85,20 +84,22 @@ def LGBMimputer(df, filter=True, exclude=None, filter_upper_limit=50, unique_cou
     - Returns the DataFrame with imputed values.
 
     Parameters:
-    - df (pd.DataFrame): The DataFrame to process and impute missing values.
+    - df (pd.DataFrame): DataFrame to process and impute missing values.
     - filter (bool, optional): If True, filters categorical columns to only those with a unique value count below `filter_upper_limit`. Defaults to True.
-    - exclude (list, optional): A list of column names to exclude from processing. Defaults to None.
-    - filter_upper_limit (int, optional): The maximum number of unique values a column can have to be considered categorical during filtering. Defaults to 50.
+    - exclude (list, optional): Column names to exclude from processing. Defaults to None.
+    - filter_upper_limit (int, optional): Maximum number of unique values for a column to be considered categorical during filtering. Defaults to 50.
+    - unique_count_limit (int, optional): Threshold for unique values to consider a numerical column as categorical. Defaults to 15.
 
     Returns:
     - pd.DataFrame: The DataFrame with missing values imputed.
     """
+    original_df = df.copy()
     if exclude != None:
         df.drop(exclude, axis=1, inplace=True)
 
     cat_cols = df.select_dtypes(exclude='number').columns.to_list()
     cat_cols += find_cat(df, unique_count_limit)
-    
+
     if filter:
         cat_cols = column_filter(df, cat_cols, filter_upper_limit=filter_upper_limit)
 
@@ -135,10 +136,10 @@ def LGBMimputer(df, filter=True, exclude=None, filter_upper_limit=50, unique_cou
         pred[target_column] = imputer.predict(X_test)
 
         # fill na
-        for i, index in enumerate(missing_indices(df)[target_column]):
-            df.loc[index, target_column] = pred[target_column][i]
+        for i, index in enumerate(missing_indices(original_df)[target_column]):
+            original_df.loc[index, target_column] = pred[target_column][i]
 
-    return df
+    return original_df
 
 
 if __name__ == '__main__':
