@@ -10,10 +10,24 @@ pip install imputepy
 
 ## Features
 
-- **Identify Columns with Missing Values:** Automatically detect columns in a DataFrame that have missing data.
-- **Find Missing Indices:** Get the indices of missing values for targeted imputation.
-- **Categorical Column Detection:** Identify potential categorical columns based on the count of unique values.
-- **Automated Imputation:** Utilize LightGBM models to impute missing values, choosing between regression and classification based on the data type.
+- **Automated Imputation:** Utilizes LightGBM models to impute missing values, selecting between regression and classification models based on the column's data type.
+- **Flexible Column Exclusion:** Allows specific columns to be excluded from the imputation process.
+- **Dynamic Filtering for Categorical Columns:** Filters categorical columns based on a specified upper limit of unique values to enhance efficiency.
+- **Customizable Thresholds for Categorical Detection:** Enables setting custom thresholds for unique value counts to refine which columns are considered categorical.
+- **Comprehensive Imputation Strategy:** Combines missing value identification, column type determination, and the application of LightGBM models for effective imputation.
+- **Direct Imputation into Original DataFrame:** Imputes missing values directly into the original DataFrame, maintaining the data structure for seamless data preprocessing integration.
+
+
+## Usage
+
+```
+from imputepy import LGBMimputer
+import pandas as pd
+import numpy as np
+
+df = pd.read_csv('data/df.csv')
+df_imp = LGBMimputer(df, filter=True, exclude=None, filter_upper_limit=50, unique_count_limit=15)
+```
 
 ## Contributing
 
