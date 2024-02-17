@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "imputepy"
-version = "0.1.4"
+version = "1.0.1"
 description = "Impute missing values using Lightgbm"
 authors = ["Sam Fo"]
 license = "MIT"
