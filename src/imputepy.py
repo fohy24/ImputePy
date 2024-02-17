@@ -38,51 +38,76 @@ def missing_indices(df):
     return indices
 
 
-def find_cat(df, unique_count_lim=15):
+def find_cat(df, unique_count_lower_limit=15):
     """
     Identify numerical columns in a DataFrame that could be considered categorical based on a threshold of unique values.
 
     Parameters:
-    df (pd.DataFrame): The DataFrame to search for potential categorical columns.
-    unique_count_lim (int, optional): The maximum number of unique values a column can have to be considered categorical. Defaults to 15.
+    - df (pd.DataFrame): The DataFrame to search within.
+    - unique_count_lower_limit (int, optional): The maximum number of unique values a column can have to be considered categorical. Defaults to 15.
 
     Returns:
-    list: A list of column names that have fewer than `unique_count_lim` unique values.
+    - list: A list of column names that have fewer than `unique_count_lower_limit` unique values, suggesting they could be treated as categorical.
     """
     possible_cat = []
     for col in df.select_dtypes(include='number').columns:
         unique_count = np.count_nonzero(df[col].unique())
-        if unique_count < unique_count_lim:
+        if unique_count < unique_count_lower_limit:
             possible_cat.append(col)
     return possible_cat
 
-
-def LGBMimputer(path, exclude=None):
+def column_filter(df, cat_cols, filter_upper_limit):
     """
-    Main function to process the DataFrame from a CSV file, impute missing values using LightGBM, and return the processed DataFrame.
-
-    This function performs the following steps:
-    - Reads a DataFrame from a specified CSV file.
-    - Optionally excludes specified columns.
-    - Identifies categorical columns.
-    - Imputes missing values using LightGBM models (Classifier or Regressor based on the column data type).
-    - Returns the imputed DataFrame.
+    Filters out categorical columns based on the number of unique values, considering only those below a specified limit.
 
     Parameters:
-    path (str): Path to the CSV file to be processed.
-    exclude (list, optional): A list of column names to be excluded from the DataFrame before processing. Defaults to None.
+    - df (pd.DataFrame): The DataFrame containing the columns to filter.
+    - cat_cols (list): A list of column names to consider for filtering.
+    - filter_upper_limit (int): The upper limit for the number of unique values in a column to be included in the filtered list.
 
     Returns:
-    pd.DataFrame: The DataFrame with missing values imputed.
+    - list: A list of column names that have a number of unique values below or equal to `filter_upper_limit`.
+    """    
+    filtered = []
+    for col in cat_cols:
+        if np.count_nonzero(df[col].unique()) <= filter_upper_limit:
+            filtered.append(col)
+    return filtered
+
+def LGBMimputer(df, filter=True, exclude=None, filter_upper_limit=50):
     """
-    df = pd.read_csv(path)
+    Imputes missing values in a DataFrame using LightGBM models, with separate handling for categorical and numerical columns.
+
+    This function:
+    - Optionally excludes specified columns.
+    - Identifies categorical columns based on data type and a uniqueness threshold.
+    - Imputes missing values using LightGBM models: LGBMClassifier for categorical columns and LGBMRegressor for numerical columns.
+    - Returns the DataFrame with imputed values.
+
+    Parameters:
+    - df (pd.DataFrame): The DataFrame to process and impute missing values.
+    - filter (bool, optional): If True, filters categorical columns to only those with a unique value count below `filter_upper_limit`. Defaults to True.
+    - exclude (list, optional): A list of column names to exclude from processing. Defaults to None.
+    - filter_upper_limit (int, optional): The maximum number of unique values a column can have to be considered categorical during filtering. Defaults to 50.
+
+    Returns:
+    - pd.DataFrame: The DataFrame with missing values imputed.
+    """
     if exclude != None:
         df.drop(exclude, axis=1, inplace=True)
 
     cat_cols = df.select_dtypes(exclude='number').columns.to_list()
     cat_cols += find_cat(df)
+    if filter:
+        cat_cols = column_filter(df, cat_cols, filter_upper_limit=filter_upper_limit)
+
     df[cat_cols] = df[cat_cols].astype('category')
-    missing_cols = cols_to_impute(df)
+
+
+    num_cols = df.select_dtypes(include='number').columns.to_list()
+    missing_cols = list(set(cols_to_impute(df)) & set(cat_cols + num_cols)) # intersection of the lists
+    print(f'{len(missing_cols)} columns will be imputed: {missing_cols}')
+    df = df[missing_cols]
 
     pred = {}
     for i, target_column in enumerate(missing_cols):
